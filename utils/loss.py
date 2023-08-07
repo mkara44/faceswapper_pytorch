@@ -16,6 +16,7 @@ class SwapperLoss(nn.Module):
     def __init__(self, cfg):
         super().__init__()
 
+        self.device = cfg.train.device
         self.rec_loss_weight = cfg.loss.rec_loss_weight
         self.attribute_loss_weight = cfg.loss.attribute_loss_weight
         self.id_loss_weight = cfg.loss.id_loss_weight
@@ -25,7 +26,8 @@ class SwapperLoss(nn.Module):
         self.discriminator = MultiScaleDiscriminator(in_channels=cfg.network.discriminator.in_channels,
                                                      n_channels=cfg.network.discriminator.n_channels,
                                                      n_depth=cfg.network.discriminator.n_depth,
-                                                     n_discriminator=cfg.network.discriminator.n_discriminator)
+                                                     n_discriminator=cfg.network.discriminator.n_discriminator,
+                                                     device=cfg.train.device)
         self.weak_fm_loss_layer_idx = cfg.network.discriminator.weak_fm_loss_layer_idx
 
         self.shape_predictor = InsightFaceShapePredictor(cfg=cfg)
@@ -49,7 +51,7 @@ class SwapperLoss(nn.Module):
                     
                     n += 1
                     rec_loss += self.rec_criterion(swapped_img[idx, ...], target_img[idx, ...])
-                rec_loss = rec_loss / n if n != 0 else torch.tensor(0, dtype=torch.float)
+                rec_loss = rec_loss / n if n != 0 else torch.tensor(0, dtype=torch.float).to(self.device)
 
                 log_dict["rec_loss"] = rec_loss.detach().clone()
                 loss += self.rec_loss_weight * rec_loss
@@ -57,9 +59,10 @@ class SwapperLoss(nn.Module):
             if self.attribute_loss_weight > 0:
                 att_loss = 0
                 for idx in range(source_img.shape[0]):
-                    source_att = self.shape_predictor(source_img[idx, ...], single_face=True, preprocess=True)
-                    swapped_att = self.shape_predictor(swapped_img[idx, ...], single_face=True, preprocess=True)
-                    att_loss += self.attribute_criterion(swapped_att, source_att)
+                    source_att = self.shape_predictor(source_img[idx, ...], single_face=True, preprocess=True).to(self.device)
+                    swapped_att = self.shape_predictor(swapped_img[idx, ...], single_face=True, preprocess=True).to(self.device)
+                    att_loss += self.attribute_criterion(swapped_att.type(torch.float), source_att.type(torch.float))
+
                 att_loss = att_loss / source_img.shape[0]
 
                 log_dict["att_loss"] = att_loss.detach().clone()

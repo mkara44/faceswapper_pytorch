@@ -5,7 +5,7 @@ import numpy as np
 from insightface.app import FaceAnalysis
 
 
-class InsightFaceShapePredictor:
+class InsightFaceShapePredictor():
     def __init__(self, cfg):
         self.predictor = FaceAnalysis(allowed_modules=cfg.loss.insightface_allowed_modules)
         self.predictor.prepare(ctx_id=0, det_size=tuple(cfg.loss.insightface_input_size))
@@ -28,11 +28,12 @@ class InsightFaceShapePredictor:
 
         coords = torch.from_numpy(coords)
         return coords if not single_face else coords[0, ...]
-    
+
     def __call__(self, img, single_face=False, preprocess=True):
         if preprocess:
             img = self.__preprocess__(img)
-        faces = self.predictor.get(img)
+        with torch.no_grad():
+            faces = self.predictor.get(img)
         if len(faces) == 0:
             return torch.zeros([106, 2], dtype=torch.int)
         return self.shape_to_torch(faces, single_face)

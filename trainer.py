@@ -69,4 +69,4 @@ class FaceSwapperTrain(LightningModule):
 
     def train_dataloader(self):
         dataset = VGGFace2(self.cfg)
-        return DataLoader(dataset=dataset, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(dataset=dataset, batch_size=self.batch_size, shuffle=True, num_workers=12)

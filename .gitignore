@@ -161,3 +161,8 @@ cython_debug/
 
 pretrained_models/
 .DS_Store
+ckpt/
+lightning_logs/
+logs/
+models/
+__pycache__/

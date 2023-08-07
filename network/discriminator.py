@@ -2,12 +2,12 @@ import torch
 import torch.nn as nn
 
 class MultiScaleDiscriminator(nn.Module):
-    def __init__(self, in_channels, n_channels, n_depth, n_discriminator):
+    def __init__(self, in_channels, n_channels, n_depth, n_discriminator, device="cpu"):
         super().__init__()
 
         self.discriminators = []
         for _ in range(n_discriminator):
-            self.discriminators.append(NLayerDiscriminator(in_channels, n_channels, n_depth))
+            self.discriminators.append(NLayerDiscriminator(in_channels, n_channels, n_depth).to(device))
 
         self.downsample = nn.AvgPool2d(kernel_size=3, stride=2, padding=[1, 1], count_include_pad=False)
 

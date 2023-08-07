@@ -13,6 +13,8 @@ class ArcFace(nn.Module):
     def load_model(self, model_path):
         model = iresnet100(fp16=False)
         model.load_state_dict(torch.load(model_path, map_location=torch.device("cpu")))
+        for param in model.parameters():
+            param.requires_grad = False
         model.eval()
 
         return model
