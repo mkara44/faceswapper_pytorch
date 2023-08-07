@@ -2,10 +2,10 @@ train:
   batch_size: 16
   learning_rate: 4e-4
   model_name: model.pt
-  device: cuda:0
+  device: cpu
 
 data:
-  dataset_path: /storage/data/CV/vggface/vggface2_crop_arcfacealign_224
+  dataset_path: ../vggface/vggface2_crop_arcfacealign_224
   same_prob: 0.2
   img_height: 224
   img_width: 224

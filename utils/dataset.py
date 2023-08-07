@@ -20,10 +20,11 @@ def to_float(image, **kwargs):
 
 
 class VGGFace2(Dataset):
+    same_person = True
+
     def __init__(self, cfg):
         super().__init__()
 
-        self.same_prob = cfg.data.same_prob
         self.img_list, self.folder_img_dict = self.__get_data__(cfg.data.dataset_path)
         self.transform = A.Compose([A.Lambda(name="BGR2RGB", image=bgr2rgb),
                                     A.Resize(height=cfg.data.img_height, width=cfg.data.img_width),
@@ -51,20 +52,35 @@ class VGGFace2(Dataset):
 
         return img_list, folder_img_dict
     
+    def random_choice_and_read(self, folder_name):
+        img_path = random.choice(self.folder_img_dict[folder_name])
+        img = cv2.imread(img_path)
+        return img
+    
+    def get_target_img(self, source_folder_name):
+        while True:
+            target_folder_name = random.choice(self.folder_img_dict.keys())
+            if target_folder_name != source_folder_name:
+                break
+
+        target_img = self.random_choice_and_read(target_folder_name)
+        return target_img
+    
     def __getitem__(self, item):
         source_img_path = self.img_list[item]
         source_folder_name = source_img_path.split("/")[-2]
         source_img = cv2.imread(source_img_path)
 
-        same_person = random.choices([0, 1], [1-self.same_prob, self.same_prob], k=1)[0]
-        if same_person:
-            target_img_path = random.choice(self.folder_img_dict[source_folder_name])
-            target_img = cv2.imread(target_img_path)
+        # same_person = random.choices([0, 1], [1-self.same_prob, self.same_prob], k=1)[0]
+        if self.same_person:
+            target_img = self.random_choice_and_read(source_folder_name)
+            self.same_person = False
 
         else:
-            target_img = source_img.copy()
+            target_img = self.get_target_img(source_folder_name)
+            self.same_person = True
 
         source_img = self.transform(image=source_img)["image"]
         target_img = self.transform(image=target_img)["image"]
 
-        return source_img, target_img, same_person
+        return source_img, target_img, self.same_person

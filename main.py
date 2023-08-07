@@ -23,7 +23,7 @@ def main(args):
         trainer = Trainer(max_epochs=500,
                           accelerator="cuda",
                           devices=1,
-                          logger=CSVLogger("logs", name="exp01"),
+                          logger=CSVLogger("logs", name="exp02"),
                           callbacks=[ModelCheckpoint(dirpath="ckpt",
                                                      save_last=True,
                                                      verbose=True)])
