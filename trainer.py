@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 from pytorch_lightning import LightningModule
 
 from network.face_swapper import FaceSwapper
@@ -24,7 +25,7 @@ class FaceSwapperTrain(LightningModule):
 
     def get_id_latent(self, img):
         with torch.no_grad():
-            id_latent = self.arc_face(img)
+            id_latent = self.arc_face(F.interpolate(img, [112, 112], mode="bilinear", align_corners=False))
 
         return id_latent
 

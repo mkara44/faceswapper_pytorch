@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 
 from network.discriminator import MultiScaleDiscriminator
-from utils.shape_predictor import InsightFaceShapePredictor
+from utils.shape_predictor import InsightFaceShapePredictor, DLibShapePredictor
 
 
 def hinge_loss(X, positive=True):
@@ -30,7 +30,7 @@ class SwapperLoss(nn.Module):
                                                      device=cfg.train.device)
         self.weak_fm_loss_layer_idx = cfg.network.discriminator.weak_fm_loss_layer_idx
 
-        self.shape_predictor = InsightFaceShapePredictor(cfg=cfg)
+        self.shape_predictor = DLibShapePredictor(cfg) #InsightFaceShapePredictor(cfg=cfg)
 
         self.rec_criterion = nn.L1Loss()
         self.weak_fm_criterion = nn.L1Loss()

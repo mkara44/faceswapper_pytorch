@@ -12,11 +12,14 @@ class InsightFaceShapePredictor():
 
     def __preprocess__(self, img):
         img = img.permute(1, 2, 0).detach().cpu().numpy()
+
+        img = (img + 1) * .5
         img = (img * 255).astype("uint8")
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         return img
     
-    def shape_to_torch(self, faces, single_face=False):
+    def shape_to_torch(self, faces):
         coords = np.zeros((len(faces),) + (faces[0].landmark_2d_106.shape))
 
         for face_idx, face in enumerate(faces):
@@ -27,7 +30,7 @@ class InsightFaceShapePredictor():
                 coords[face_idx][att_idx] = att[att_idx]
 
         coords = torch.from_numpy(coords)
-        return coords if not single_face else coords[0, ...]
+        return coords
 
     def __call__(self, img, single_face=False, preprocess=True):
         if preprocess:
@@ -36,7 +39,7 @@ class InsightFaceShapePredictor():
             faces = self.predictor.get(img)
         if len(faces) == 0:
             return torch.zeros([106, 2], dtype=torch.int)
-        return self.shape_to_torch(faces, single_face)
+        return self.shape_to_torch(faces if not single_face else [faces[0]])
     
 
 class DLibShapePredictor:
@@ -46,22 +49,29 @@ class DLibShapePredictor:
 
     def __preprocess__(self, img):
         img = img.permute(1, 2, 0).detach().cpu().numpy()
+
+        img = (img + 1) * .5
         img = (img * 255).astype("uint8")
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         return img
     
-    def shape_to_torch(self, shape):
-        coords = torch.zeros((68, 2), dtype=torch.uint8)
+    def shape_to_torch(self, img, faces):
+        coords = np.zeros((len(faces),) + (68, 2))
 
-        for i in range(0, 68):
-            coords[i][0] = shape.part(i).x
-            coords[i][1] = shape.part(i).y
+        for face_idx, face in enumerate(faces):
+            att = self.predictor(img, face)
+            for i in range(0, 68):
+                coords[face_idx][i][0] = att.part(i).x
+                coords[face_idx][i][1] = att.part(i).y
 
-        return coords.type(torch.float)
+        coords = torch.from_numpy(coords)
+        return coords
 
-    def __call__(self, img):
-        img = self.__preprocess__(img)
-        rect = self.detector(img)[0]
-        shape = self.predictor(img, rect)
-        return self.shape_to_torch(shape)
+    def __call__(self, img, single_face=False, preprocess=True):
+        if preprocess:
+            img = self.__preprocess__(img)
+        faces = self.detector(img)
+        if len(faces) == 0:
+            return torch.zeros([68, 2], dtype=torch.int)
+        return self.shape_to_torch(img, faces if not single_face else [faces[0]])
